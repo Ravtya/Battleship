@@ -1,0 +1,76 @@
+@page "/lobby"
+@rendermode InteractiveServer
+@implements IDisposable
+@inject BattleshipHubClient Hub
+@inject UserSession Session
+@inject NavigationManager Nav
+
+<PageTitle>Battleship — Lobby</PageTitle>
+
+<RequiresRegistration>
+    <div class="mx-auto" style="max-width:900px;">
+        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3">
+            <h2 class="mb-0">Lobby</h2>
+            <button class="btn btn-primary" @onclick='() => Nav.NavigateTo("/game/create")'>Create game</button>
+        </div>
+
+        <p class="text-body-secondary">Playing as <strong class="text-body">@Session.DisplayName</strong></p>
+
+        @if (_games.Count == 0)
+        {
+            <div class="alert alert-info">No open games.</div>
+        }
+        else
+        {
+            <ul class="list-group mb-3">
+                @foreach (var game in _games)
+                {
+                    <li class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2">
+                        <span><strong>@game.HostName</strong> — @game.GridSize×@game.GridSize, ships: @game.ShipCount</span>
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => Join(game.GameId)">Join</button>
+                    </li>
+                }
+            </ul>
+        }
+
+        @if (_error is not null)
+        {
+            <div class="alert alert-danger mb-0">@_error</div>
+        }
+    </div>
+</RequiresRegistration>
+
+@code {
+    private List<LobbyGameDto> _games = [];
+    private string? _error;
+    private IDisposable? _sub;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!Session.IsRegistered) return;
+
+        _sub = Hub.On<List<LobbyGameDto>>("LobbyUpdated", games =>
+        {
+            _games = games.Where(g => g.HostId != Session.PlayerId).ToList();
+            _ = InvokeAsync(StateHasChanged);
+        });
+
+        await LoadLobby();
+    }
+
+    private async Task LoadLobby() =>
+        await HubPage.RunAsync(Hub, async () =>
+        {
+            var games = await Hub.InvokeAsync<List<LobbyGameDto>>("GetLobby");
+            _games = games.Where(g => g.HostId != Session.PlayerId).ToList();
+        }, message => _error = message);
+
+    private async Task Join(string gameId) =>
+        await HubPage.RunAsync(Hub, async () =>
+        {
+            await Hub.InvokeAsync("JoinGame", gameId);
+            Nav.NavigateTo($"/game/{gameId}");
+        }, message => _error = message);
+
+    public void Dispose() => _sub?.Dispose();
+}

@@ -1,0 +1,16 @@
+@inject UserSession Session
+
+@if (!Session.IsRegistered)
+{
+    <div class="alert alert-warning">
+        You are not registered. <a class="alert-link" href="/">Go back</a>
+    </div>
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

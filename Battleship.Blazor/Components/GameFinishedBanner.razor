@@ -1,0 +1,12 @@
+<div class="alert @(Won ? "alert-success" : "alert-danger") border mb-4 py-4 text-center shadow-sm">
+    <p class="display-6 mb-2">@(Won ? "Victory!" : "Defeat")</p>
+    <p class="fs-5 mb-4">@(Won ? "You sank all enemy ships." : "All your ships have been sunk.")</p>
+    <button class="btn btn-lg @(Won ? "btn-success" : "btn-light")" @onclick="OnBackToLobby">
+        Back to lobby
+    </button>
+</div>
+
+@code {
+    [Parameter] public bool Won { get; set; }
+    [Parameter] public EventCallback OnBackToLobby { get; set; }
+}

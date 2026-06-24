@@ -1,0 +1,121 @@
+@page "/game/create"
+@rendermode InteractiveServer
+@inject BattleshipHubClient Hub
+@inject UserSession Session
+@inject NavigationManager Nav
+
+<PageTitle>Battleship — Create</PageTitle>
+
+<RequiresRegistration>
+    <div class="mx-auto" style="max-width:720px;">
+        <h2 class="mb-3">Create game</h2>
+
+        <div class="mb-3">
+            <label class="form-label" for="grid-size">Grid size</label>
+            <input id="grid-size" class="form-control" type="number" min="@GridLimits.MinSize" max="@GridLimits.MaxSize" @bind="_gridSize" @bind:after="ValidateFleet"/>
+        </div>
+
+        <h5 class="mb-2">Fleet</h5>
+        <p class="text-body-secondary small mb-3">Set how many ships of each type to include.</p>
+
+        <div class="table-responsive mb-3">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                <tr>
+                    <th>Ship</th>
+                    <th>Length</th>
+                    <th style="width:120px;">Count</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var shipType in FleetComposition.Types)
+                {
+                    <tr>
+                        <td>@shipType.Name</td>
+                        <td>@shipType.Length</td>
+                        <td>
+                            <input class="form-control form-control-sm"
+                                   type="number"
+                                   min="0"
+                                   max="20"
+                                   value="@_fleet.GetCount(shipType.Key)"
+                                   @onchange="e => SetShipCount(shipType.Key, e)"/>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+
+        <p class="text-body-secondary small mb-3">Total ships: @_fleet.TotalShips</p>
+
+        @if (_message is not null)
+        {
+            <div class="alert @(_isError ? "alert-danger" : (_canCreate ? "alert-success" : "alert-warning")) mb-3">@_message</div>
+        }
+
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <button class="btn btn-primary" disabled="@(_busy || !_canCreate)" @onclick="Create">Create</button>
+            <button class="btn btn-outline-secondary" @onclick="ResetFleet">Reset to classic</button>
+            <button class="btn btn-outline-secondary" @onclick='() => Nav.NavigateTo("/lobby")'>Back</button>
+        </div>
+    </div>
+</RequiresRegistration>
+
+@code {
+    private int _gridSize = 10;
+    private FleetComposition _fleet = FleetComposition.Classic.Clone();
+    private string? _message;
+    private bool _isError;
+    private bool _canCreate;
+    private bool _busy;
+
+    protected override void OnInitialized()
+    {
+        if (Session.IsRegistered)
+            ValidateFleet();
+    }
+
+    private void SetShipCount(string typeKey, ChangeEventArgs e)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var count))
+            count = 0;
+
+        _fleet.CountsByType[typeKey] = Math.Clamp(count, 0, 20);
+        ValidateFleet();
+    }
+
+    private void ResetFleet()
+    {
+        _fleet = FleetComposition.Classic.Clone();
+        ValidateFleet();
+    }
+
+    private void ValidateFleet()
+    {
+        (_canCreate, _message) = _fleet.ValidateForGrid(_gridSize);
+        _isError = false;
+    }
+
+    private async Task Create()
+    {
+        _busy = true;
+        try
+        {
+            await HubPage.RunAsync(Hub, async () =>
+            {
+                var gameId = await Hub.InvokeAsync<string>("CreateGame", _gridSize, _fleet.Clone());
+                Nav.NavigateTo($"/game/{gameId}");
+            }, message =>
+            {
+                _message = message;
+                _isError = true;
+                _canCreate = false;
+            });
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

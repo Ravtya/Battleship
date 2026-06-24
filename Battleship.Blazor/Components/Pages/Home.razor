@@ -1,0 +1,65 @@
+﻿@page "/"
+@rendermode InteractiveServer
+@inject BattleshipHubClient Hub
+@inject UserSession Session
+@inject NavigationManager Nav
+
+<PageTitle>Battleship — Enter name</PageTitle>
+
+<div class="mx-auto" style="max-width:720px;">
+    <h1 class="mb-3">Battleship</h1>
+    <p class="text-body-secondary">Enter your name</p>
+
+    <div class="input-group mb-3">
+        <input class="form-control" placeholder="Your name" @bind="_name" @bind:event="oninput" @onkeydown="OnKeyDown"/>
+        <button class="btn btn-primary" disabled="@_busy" @onclick="Register">Enter</button>
+    </div>
+
+    @if (_error is not null)
+    {
+        <div class="alert alert-danger mb-0">@_error</div>
+    }
+</div>
+
+@code {
+    private string _name = "";
+    private string? _error;
+    private bool _busy;
+
+    protected override void OnInitialized()
+    {
+        if (Session.IsRegistered)
+            Nav.NavigateTo("/lobby");
+    }
+
+    private async Task Register()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _error = "Please enter a name.";
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            await HubPage.RunAsync(Hub, async () =>
+            {
+                var player = await Hub.InvokeAsync<PlayerInfo>("Register", _name.Trim());
+                Session.PlayerId = player.PlayerId;
+                Session.DisplayName = player.Name;
+                Nav.NavigateTo("/lobby");
+            }, message => _error = message);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await Register();
+    }
+}

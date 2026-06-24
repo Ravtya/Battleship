@@ -1,0 +1,56 @@
+<div class="d-grid gap-1" style="grid-template-columns:repeat(@Size, 2rem); width:max-content;">
+    @for (var r = 0; r < Size; r++)
+    {
+        for (var c = 0; c < Size; c++)
+        {
+            var row = r;
+            var col = c;
+            var cell = Board[r][c];
+            var isPreview = Preview?.Contains((row, col)) == true;
+            var canClick = Clickable && IsClickable(cell);
+
+            <button type="button"
+                    class="@GetCellClass(cell, isPreview)"
+                    disabled="@(!canClick)"
+                    title="@($"{row},{col}")"
+                    style="width:2rem;height:2rem;padding:0;"
+                    @onmouseenter="() => SetHover((row, col))"
+                    @onmouseleave="() => SetHover(null)"
+                    @onclick="() => OnClick.InvokeAsync((row, col))">
+            </button>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public CellState[][] Board { get; set; } = [];
+    [Parameter] public bool Clickable { get; set; }
+    [Parameter] public bool FireMode { get; set; }
+    [Parameter] public EventCallback<(int Row, int Col)> OnClick { get; set; }
+    [Parameter] public HashSet<(int Row, int Col)>? Preview { get; set; }
+    [Parameter] public bool PreviewValid { get; set; }
+    [Parameter] public EventCallback<(int Row, int Col)?> HoverChanged { get; set; }
+
+    private int Size => Board.Length;
+
+    private bool IsClickable(CellState cell) =>
+        FireMode ? cell == CellState.Empty : cell != CellState.Ship;
+
+    private string GetCellClass(CellState cell, bool isPreview) => (isPreview, cell) switch
+    {
+        (true, _) when PreviewValid => "btn btn-sm btn-success",
+        (true, _) => "btn btn-sm btn-danger",
+        (_, CellState.Ship) => "btn btn-sm btn-secondary",
+        (_, CellState.Miss) => "btn btn-sm btn-light",
+        (_, CellState.Hit) => "btn btn-sm btn-danger",
+        (_, CellState.Sunk) => "btn btn-sm btn-dark",
+        (_, CellState.Excluded) => "btn btn-sm btn-outline-secondary",
+        _ => "btn btn-sm btn-outline-primary"
+    };
+
+    private Task SetHover((int Row, int Col)? cell)
+    {
+        if (!Clickable) return Task.CompletedTask;
+        return HoverChanged.InvokeAsync(cell);
+    }
+}
