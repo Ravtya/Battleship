@@ -8,34 +8,35 @@
 <PageTitle>Battleship — Lobby</PageTitle>
 
 <RequiresRegistration>
-    <div class="mx-auto" style="max-width:900px;">
-        <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between mb-3">
-            <h2 class="mb-0">Lobby</h2>
+    <div class="mx-auto" style="max-width:640px;">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+            <h2 class="h4 text-body-secondary mb-0">Open games</h2>
             <button class="btn btn-primary" @onclick='() => Nav.NavigateTo("/game/create")'>Create game</button>
         </div>
 
-        <p class="text-body-secondary">Playing as <strong class="text-body">@Session.DisplayName</strong></p>
-
         @if (_games.Count == 0)
         {
-            <div class="alert alert-info">No open games.</div>
+            <div class="alert alert-info mb-0">No open games.</div>
         }
         else
         {
-            <ul class="list-group mb-3">
+            <div class="list-group list-group-flush shadow-sm rounded overflow-hidden">
                 @foreach (var game in _games)
                 {
-                    <li class="list-group-item d-flex flex-wrap align-items-center justify-content-between gap-2">
-                        <span><strong>@game.HostName</strong> — @game.GridSize×@game.GridSize, ships: @game.ShipCount</span>
-                        <button class="btn btn-sm btn-outline-primary" @onclick="() => Join(game.GameId)">Join</button>
-                    </li>
+                    <div class="list-group-item d-flex align-items-center justify-content-between gap-3 py-3">
+                        <div class="text-start">
+                            <div class="fw-semibold">@game.HostName</div>
+                            <div class="small text-body-secondary">@game.GridSize×@game.GridSize grid · @game.ShipCount ships</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary flex-shrink-0" @onclick="() => Join(game.GameId)">Join</button>
+                    </div>
                 }
-            </ul>
+            </div>
         }
 
         @if (_error is not null)
         {
-            <div class="alert alert-danger mb-0">@_error</div>
+            <div class="alert alert-danger mt-3 mb-0">@_error</div>
         }
     </div>
 </RequiresRegistration>

@@ -8,142 +8,144 @@
 <PageTitle>Battleship — Game</PageTitle>
 
 <RequiresRegistration>
-@if (_state is null)
-{
-    <p class="text-body-secondary">Loading game...</p>
-}
-else
-{
-    var waiting = _state.Phase == GamePhase.WaitingForOpponent;
-    var placing = _state.Phase == GamePhase.PlacingShips;
-    var inProgress = _state.Phase == GamePhase.InProgress;
-    var finished = _state.Phase == GamePhase.Finished;
-    var won = finished && _state.WinnerPlayerId == Session.PlayerId;
-    var myTurn = inProgress && _state.CurrentTurnPlayerId == Session.PlayerId;
-    var allShipsPlaced = ShipPlacement.IsComplete(_state.ShipConfiguration, _state.PlacedShipIds);
+    @if (_state is null)
+    {
+        <p class="text-body-secondary text-center">Loading game...</p>
+    }
+    else
+    {
+        var waiting = _state.Phase == GamePhase.WaitingForOpponent;
+        var placing = _state.Phase == GamePhase.PlacingShips;
+        var inProgress = _state.Phase == GamePhase.InProgress;
+        var finished = _state.Phase == GamePhase.Finished;
+        var won = finished && _state.WinnerPlayerId == Session.PlayerId;
+        var myTurn = inProgress && _state.CurrentTurnPlayerId == Session.PlayerId;
+        var allShipsPlaced = ShipPlacement.IsComplete(_state.ShipConfiguration, _state.PlacedShipIds);
 
-    <div class="mx-auto" style="max-width:1100px;">
-        <h2 class="mb-1">Game @GameId</h2>
-        @if (!finished && !waiting)
-        {
-            <p class="@(_state.Phase == GamePhase.InProgress && myTurn ? "text-primary fw-semibold" : "text-body-secondary")">
-                @(_state.Phase switch
-                {
-                    GamePhase.PlacingShips => "Place your fleet",
-                    GamePhase.InProgress => myTurn ? "Your turn" : "Opponent's turn",
-                    _ => ""
-                })
-            </p>
-        }
+        <div class="mx-auto" style="max-width:1100px;">
+            <h2 class="mb-1 text-center">Game @GameId</h2>
+            @if (!finished && !waiting)
+            {
+                <p class="text-center @(_state.Phase == GamePhase.InProgress && myTurn ? "text-primary fw-semibold" : "text-body-secondary")">
+                    @(_state.Phase switch
+                    {
+                        GamePhase.PlacingShips => "Place your fleet",
+                        GamePhase.InProgress => myTurn ? "Your turn" : "Opponent's turn",
+                        _ => ""
+                    })
+                </p>
+            }
 
-        @if (finished)
-        {
-            <GameFinishedBanner Won="won" OnBackToLobby='() => Nav.NavigateTo("/lobby")'/>
-        }
+            @if (finished)
+            {
+                <GameFinishedBanner Won="won" OnBackToLobby='() => Nav.NavigateTo("/lobby")'/>
+            }
 
-        @if (waiting)
-        {
-            <div class="alert alert-info">Waiting for an opponent to join your game.</div>
-        }
-        else if (placing)
-        {
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Ship placement</h5>
-                    <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
-                        <div>
-                            <label class="form-label mb-1">Ship</label>
-                            <select class="form-select" @bind="_selectedShipId" disabled="@_state.OwnPlacementComplete">
-                                @foreach (var ship in RemainingShips)
-                                {
-                                    <option value="@ship.Id">@ship.Name (@ship.Length)</option>
-                                }
-                            </select>
-                        </div>
-                        <button class="btn @(_horizontal ? "btn-primary" : "btn-outline-primary")"
-                                disabled="@_state.OwnPlacementComplete"
-                                @onclick="() => _horizontal = true">
-                            Horizontal
-                        </button>
-                        <button class="btn @(!_horizontal ? "btn-primary" : "btn-outline-primary")"
-                                disabled="@_state.OwnPlacementComplete"
-                                @onclick="() => _horizontal = false">
-                            Vertical
-                        </button>
-                        <button class="btn btn-outline-secondary" disabled="@_state.OwnPlacementComplete"
-                                @onclick="AutoPlace">Auto-place
-                        </button>
-                        <button class="btn btn-success" disabled="@(!allShipsPlaced || _state.OwnPlacementComplete)"
-                                @onclick="ConfirmPlacement">Confirm
-                        </button>
-                    </div>
-
-                    <p class="text-body-secondary mb-0">Ships cannot touch each other (even diagonally). Click the board
-                        to place.</p>
-                </div>
-            </div>
-
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Your fleet</h5>
-                    <GameBoard Board="_state.OwnBoard"
-                               Clickable="!_state.OwnPlacementComplete && SelectedShip is not null"
-                               Preview="PreviewCells"
-                               PreviewValid="IsPreviewValid"
-                               HoverChanged="OnHoverChanged"
-                               OnClick="OnPlaceShip"/>
-                </div>
-            </div>
-        }
-        else
-        {
-            <div class="row g-3 mb-3">
-                <div class="col-12 col-lg-6">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Enemy board</h5>
-                            <GameBoard Board="_state.EnemyBoard"
-                                       Clickable="inProgress && myTurn"
-                                       FireMode="true"
-                                       OnClick="OnFire"/>
+            @if (waiting)
+            {
+                <div class="alert alert-info text-center">Waiting for an opponent to join your game.</div>
+            }
+            else if (placing)
+            {
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Ship placement</h5>
+                        <div class="d-flex flex-wrap gap-2 align-items-end mb-3">
+                            <div>
+                                <label class="form-label mb-1">Ship</label>
+                                <select class="form-select" @bind="_selectedShipId"
+                                        disabled="@_state.OwnPlacementComplete">
+                                    @foreach (var ship in RemainingShips)
+                                    {
+                                        <option value="@ship.Id">@ship.Name (@ship.Length)</option>
+                                    }
+                                </select>
+                            </div>
+                            <button class="btn @(_horizontal ? "btn-primary" : "btn-outline-primary")"
+                                    disabled="@_state.OwnPlacementComplete"
+                                    @onclick="() => _horizontal = true">
+                                Horizontal
+                            </button>
+                            <button class="btn @(!_horizontal ? "btn-primary" : "btn-outline-primary")"
+                                    disabled="@_state.OwnPlacementComplete"
+                                    @onclick="() => _horizontal = false">
+                                Vertical
+                            </button>
+                            <button class="btn btn-outline-secondary" disabled="@_state.OwnPlacementComplete"
+                                    @onclick="AutoPlace">Auto-place
+                            </button>
+                            <button class="btn btn-success" disabled="@(!allShipsPlaced || _state.OwnPlacementComplete)"
+                                    @onclick="ConfirmPlacement">Confirm
+                            </button>
                         </div>
                     </div>
                 </div>
-                <div class="col-12 col-lg-6">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Your board</h5>
-                            <GameBoard Board="_state.OwnBoard"/>
+
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Your fleet</h5>
+                        <GameBoard Board="_state.OwnBoard"
+                                   Clickable="!_state.OwnPlacementComplete && SelectedShip is not null"
+                                   Preview="PreviewCells"
+                                   PreviewValid="IsPreviewValid"
+                                   HoverChanged="OnHoverChanged"
+                                   OnClick="OnPlaceShip"/>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-lg-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title text-center">Enemy board</h5>
+                                <GameBoard Board="_state.EnemyBoard"
+                                           Clickable="inProgress && myTurn"
+                                           FireMode="true"
+                                           OnClick="OnFire"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 col-lg-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title text-center">Your board</h5>
+                                <GameBoard Board="_state.OwnBoard"/>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        }
+            }
 
-        @if (_state.RecentMoves.Count > 0)
-        {
-            <h5>Moves</h5>
-            <ul class="list-group mb-3">
-                @foreach (var m in _state.RecentMoves.AsEnumerable().Reverse())
-                {
-                    <li class="list-group-item">@m.PlayerName: (@m.Row,@m.Col) -> @m.Result</li>
-                }
-            </ul>
-        }
+            @if (_state.RecentMoves.Count > 0)
+            {
+                <h5 class="text-center mb-2">Moves</h5>
+                <ul class="list-group list-group-flush mb-3 small mx-auto text-center"
+                    style="max-width:24rem; max-height:9rem; overflow-y:auto;">
+                    @foreach (var m in _state.RecentMoves.AsEnumerable().Reverse())
+                    {
+                        <li class="list-group-item py-0 px-2 lh-sm border-0 border-bottom">
+                            @m.PlayerName: (@m.Row,@m.Col) → @m.Result
+                        </li>
+                    }
+                </ul>
+            }
 
-        @if (!finished)
-        {
-            <div class="d-flex gap-2 mb-3">
-                <button class="btn btn-outline-secondary" @onclick='() => Nav.NavigateTo("/lobby")'>Back to lobby</button>
-            </div>
-        }
+            @if (!finished)
+            {
+                <div class="d-flex justify-content-center gap-2 mb-3">
+                    <button class="btn btn-outline-secondary" @onclick='() => Nav.NavigateTo("/lobby")'>Back to lobby
+                    </button>
+                </div>
+            }
 
-        @if (_error is not null)
-        {
-            <div class="alert alert-danger mb-0">@_error</div>
-        }
-    </div>
-}
+            @if (_error is not null)
+            {
+                <div class="alert alert-danger mb-0">@_error</div>
+            }
+        </div>
+    }
 </RequiresRegistration>
 
 @code {

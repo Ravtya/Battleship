@@ -1,39 +1,73 @@
 ﻿@page "/"
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: true))
 @inject BattleshipHubClient Hub
+@inject ApiWakeService Wake
 @inject UserSession Session
 @inject NavigationManager Nav
 
 <PageTitle>Battleship — Enter name</PageTitle>
 
-<div class="mx-auto" style="max-width:720px;">
-    <h1 class="mb-3">Battleship</h1>
-    <p class="text-body-secondary">Enter your name</p>
+<div class="mx-auto" style="max-width:420px;">
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4 text-center">
+            <p class="text-body-secondary mb-4">Enter your name to join the lobby</p>
 
-    <div class="input-group mb-3">
-        <input class="form-control" placeholder="Your name" @bind="_name" @bind:event="oninput" @onkeydown="OnKeyDown"/>
-        <button class="btn btn-primary" disabled="@_busy" @onclick="Register">Enter</button>
+            @switch (_ready)
+            {
+                case null:
+                    <div class="alert alert-info d-flex align-items-center justify-content-center mb-3 py-2">
+                        <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                        Waking up game server...
+                    </div>
+                    break;
+                case false:
+                    <div class="alert alert-warning mb-3 py-2">
+                        Game server is not responding.
+                        <button class="btn btn-sm btn-outline-secondary ms-1" @onclick="WakeUp">Retry</button>
+                    </div>
+                    break;
+            }
+
+            <div class="input-group mb-0">
+                <input class="form-control" placeholder="Your name" @bind="_name" @bind:event="oninput" @onkeydown="OnKeyDown"
+                       disabled="@(_ready != true)"/>
+                <button class="btn btn-primary px-4" disabled="@(_busy || _ready != true)" @onclick="Register">Enter</button>
+            </div>
+
+            @if (_error is not null)
+            {
+                <div class="alert alert-danger mt-3 mb-0 py-2">@_error</div>
+            }
+        </div>
     </div>
-
-    @if (_error is not null)
-    {
-        <div class="alert alert-danger mb-0">@_error</div>
-    }
 </div>
 
 @code {
     private string _name = "";
     private string? _error;
     private bool _busy;
+    private bool? _ready;
 
-    protected override void OnInitialized()
+    protected override void OnInitialized() => _ = WakeUp();
+
+    private async Task WakeUp()
     {
-        if (Session.IsRegistered)
+        _ready = null;
+        await InvokeAsync(StateHasChanged);
+
+        _ready = await Wake.WakeAsync();
+
+        if (_ready == true && Session.IsRegistered)
             Nav.NavigateTo("/lobby");
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task Register()
     {
+        if (_ready != true)
+            return;
+
         if (string.IsNullOrWhiteSpace(_name))
         {
             _error = "Please enter a name.";

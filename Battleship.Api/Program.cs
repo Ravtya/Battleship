@@ -10,6 +10,7 @@ builder.Services.AddSingleton<GameService>();
 var app = builder.Build();
 
 app.UseHttpsRedirection();
+app.MapGet("/health", () => Results.Ok("ok"));
 app.MapHub<BattleHub>("/Battle");
 
 app.Run();

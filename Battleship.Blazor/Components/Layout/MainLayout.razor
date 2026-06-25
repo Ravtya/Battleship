@@ -1,6 +1,21 @@
 ﻿@inherits LayoutComponentBase
+@inject UserSession Session
 
-<main class="container py-4">
+<header class="border-bottom bg-body-tertiary mb-4">
+    <div class="container py-3 position-relative">
+        @if (Session.IsRegistered)
+        {
+            <span class="position-absolute top-50 end-0 translate-middle-y badge rounded-pill text-bg-primary text-truncate"
+                  style="max-width:45%;">
+                @Session.DisplayName
+            </span>
+        }
+
+        <h1 class="display-5 text-center mb-0">Battleship</h1>
+    </div>
+</header>
+
+<main class="container pb-4">
     @Body
 </main>
 

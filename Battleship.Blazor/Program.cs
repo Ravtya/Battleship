@@ -5,6 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.Configure<BattleshipApiOptions>(builder.Configuration.GetSection("BattleshipApi"));
+builder.Services.AddHttpClient<ApiWakeService>(client => client.Timeout = TimeSpan.FromSeconds(90));
 builder.Services.AddScoped<UserSession>();
 builder.Services.AddScoped<BattleshipHubClient>();
 
