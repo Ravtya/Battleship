@@ -1,6 +1,10 @@
 @inject UserSession Session
 
-@if (!Session.IsRegistered)
+@if (!_checked)
+{
+    @ChildContent
+}
+else if (!Session.IsRegistered)
 {
     <div class="alert alert-warning">
         You are not registered. <a class="alert-link" href="/">Go back</a>
@@ -13,4 +17,14 @@ else
 
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool _checked;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (!firstRender) return;
+
+        _checked = true;
+        StateHasChanged();
+    }
 }
