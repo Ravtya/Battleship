@@ -24,6 +24,9 @@
 
         <div class="mx-auto" style="max-width:1100px;">
             <h2 class="mb-1 text-center">Game @GameId</h2>
+            <p class="text-center text-body-secondary small mb-3">
+                You: <span class="fw-semibold text-body">@Session.DisplayName</span>
+            </p>
             @if (!finished && !waiting)
             {
                 <p class="text-center @(_state.Phase == GamePhase.InProgress && myTurn ? "text-primary fw-semibold" : "text-body-secondary")">

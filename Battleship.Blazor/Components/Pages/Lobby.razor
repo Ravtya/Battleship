@@ -14,6 +14,10 @@
             <button class="btn btn-primary" @onclick='() => Nav.NavigateTo("/game/create")'>Create game</button>
         </div>
 
+        <p class="text-center text-body-secondary small mb-4">
+            You: <span class="fw-semibold text-body">@Session.DisplayName</span>
+        </p>
+
         @if (_games.Count == 0)
         {
             <div class="alert alert-info mb-0">No open games.</div>
