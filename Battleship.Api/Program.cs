@@ -3,12 +3,14 @@ using Battleship.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 builder.Services.AddSignalR();
 builder.Services.AddSingleton<PlayerService>();
 builder.Services.AddSingleton<GameService>();
 
 var app = builder.Build();
 
+app.UseCors();
 app.UseHttpsRedirection();
 app.MapGet("/health", () => Results.Ok("ok"));
 app.MapHub<BattleHub>("/Battle");

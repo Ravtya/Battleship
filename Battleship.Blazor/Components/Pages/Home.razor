@@ -1,7 +1,8 @@
 ﻿@page "/"
 @rendermode @(new InteractiveServerRenderMode(prerender: true))
 @inject BattleshipHubClient Hub
-@inject ApiWakeService Wake
+@inject IJSRuntime JS
+@inject IOptions<BattleshipApiOptions> Api
 @inject UserSession Session
 @inject NavigationManager Nav
 
@@ -10,7 +11,6 @@
 <div class="mx-auto" style="max-width:420px;">
     <div class="card shadow-sm border-0">
         <div class="card-body p-4 text-center">
-            <p class="text-body-secondary mb-4">Enter your name to join the lobby</p>
 
             @switch (_ready)
             {
@@ -48,14 +48,20 @@
     private bool _busy;
     private bool? _ready;
 
-    protected override void OnInitialized() => _ = WakeUp();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await WakeUp();
+    }
 
     private async Task WakeUp()
     {
         _ready = null;
         await InvokeAsync(StateHasChanged);
 
-        _ready = await Wake.WakeAsync();
+        _ready = await JS.InvokeAsync<bool>("wakeApi", Api.Value.HealthUrl);
 
         if (_ready == true && Session.IsRegistered)
             Nav.NavigateTo("/lobby");
